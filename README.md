@@ -76,4 +76,4 @@ The query results can be visualized in Looker Studio to display key metrics such
 - **Country ranking by emails sent** (`rank_total_country_sent_cnt`)
 - **Daily trend of sent messages** (`sent_msg`)
 
-For a closer look, check the visualization in [Looker Studio]([https://your-lookerstudio-link.com](https://lookerstudio.google.com/reporting/bd6f8eb0-9e85-4da6-8353-c41b5e73016b)). 
+For a closer look, check the visualization in [Looker Studio](https://your-lookerstudio-link.com](https://lookerstudio.google.com/reporting/bd6f8eb0-9e85-4da6-8353-c41b5e73016b). 
