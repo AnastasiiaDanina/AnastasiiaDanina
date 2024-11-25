@@ -35,3 +35,45 @@ This SQL script aggregates multiple metrics related to revenue, email campaigns,
 - `DA.email_open`
 - `DA.email_visit`
 - `DA.paid_search_cost`
+# ecommerce_data_analysis.sql
+
+## Description
+This SQL query extracts and organizes key metrics from an e-commerce database to analyze user activity and interactions with email campaigns. The query creates a unified dataset with metrics grouped by date and country, providing insights into account creation, email campaign engagement, and user interactions.
+
+### Output Dataset Columns:
+- **date**: The date of the activity (account creation or email sent).
+- **country**: The country of the user.
+- **send_interval**: The interval for email sending.
+- **is_verified**: Indicates whether an account is verified.
+- **is_unsubscribed**: Indicates whether a user unsubscribed.
+- **account_cnt**: Total number of accounts created.
+- **sent_msg**: Number of emails sent.
+- **open_msg**: Number of emails opened.
+- **visit_msg**: Number of email clicks (visits from email).
+- **total_country_account_cnt**: Total number of accounts created by country.
+- **total_country_sent_cnt**: Total number of emails sent by country.
+- **rank_total_country_account_cnt**: Rank of countries by total accounts created.
+- **rank_total_country_sent_cnt**: Rank of countries by total emails sent.
+
+## Query Structure and Logic
+
+### CTEs for Data Segmentation:
+- The query begins by organizing account creation data in the `account_data` CTE and email metrics in the `email_metrics` CTE.
+- Each CTE gathers data with a focus on either account activities or email interactions, ensuring independence between these two data segments. They are then combined using `UNION ALL`.
+
+### Window Functions and Aggregation:
+- The query uses window functions to calculate the total account creation count by country (`total_country_account_cnt`) and the total emails sent by country (`total_country_sent_cnt`).
+- It ranks each country based on these totals (`rank_total_country_account_cnt` and `rank_total_country_sent_cnt`), enabling easy comparison between countries.
+
+### Filtering and Final Output:
+- The final selection only includes records where either the account creation rank or email sent rank is within the top 10. This highlights the most active countries in terms of account creation and email engagement.
+
+## Visualization
+The query results can be visualized in Looker Studio to display key metrics such as:
+- **Total accounts created** (`account_cnt`)
+- **Total emails sent by country** (`total_country_sent_cnt`)
+- **Country ranking by account creation** (`rank_total_country_account_cnt`)
+- **Country ranking by emails sent** (`rank_total_country_sent_cnt`)
+- **Daily trend of sent messages** (`sent_msg`)
+
+For a closer look, check the visualization in Looker Studio 
