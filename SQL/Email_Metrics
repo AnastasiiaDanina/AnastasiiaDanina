@@ -1,113 +1,124 @@
-WITH
- revenue_usd AS (
- SELECT
-   s.date,
-   SUM(p.price) AS revenue
- FROM
-   `DA.order` o
- JOIN
-   `DA.product` p
- ON
-   o.item_id = p.item_id
- JOIN
-   `DA.session` s
- ON
-   o.ga_session_id = s.ga_session_id
- GROUP BY
-   s.date ),
-   email_metrics AS (
- SELECT
-   DATE_ADD(s.date, INTERVAL ems.sent_date DAY) AS sent_date,
-   COUNT(DISTINCT ems.id_message) AS sent_msg,
-   COUNT(DISTINCT eo.id_message) AS open_msg,
-   COUNT(DISTINCT ev.id_message) AS click_msg
- FROM
-   `DA.email_sent` ems
- JOIN
-   `DA.account_session` acs
- ON
-   ems.id_account = acs.account_id
- JOIN
-   `DA.session` s
- ON
-   acs.ga_session_id = s.ga_session_id
- LEFT JOIN
-   `DA.email_open` eo
- ON
-   ems.id_message = eo.id_message
- LEFT JOIN
-   `DA.email_visit` ev
- ON
-   ems.id_message = ev.id_message
- GROUP BY
-   DATE_ADD(s.date, INTERVAL ems.sent_date DAY) ),
-   registrations AS (
- SELECT
-   s.date,
-   COUNT(ac.account_id) AS account_cnt
- FROM
-   `DA.account_session` ac
- JOIN
-   `DA.session` s
- ON
-   ac.ga_session_id = s.ga_session_id
- GROUP BY
-   s.date ),
-   final AS (
- SELECT
-   date,
-   revenue,
-   0 AS cost,
-   0 sent_msg,
-   0 AS open_msg,
-   0 AS click_msg,
-   0 AS account_cnt
- FROM
-   revenue_usd
- UNION ALL
- SELECT
-   date,
-   0 AS revenue,
-   cost,
-   0 sent_msg,
-   0 AS open_msg,
-   0 AS click_msg,
-   0 AS account_cnt
- FROM
-   `DA.paid_search_cost`
- UNION ALL
- SELECT
-   sent_date,
-   0 AS revenue,
-   0 AS cost,
-   sent_msg,
-   open_msg,
-   click_msg,
-   0 AS account_cnt
- FROM
-   email_metrics
- UNION ALL
- SELECT
-   date,
-   0 AS revenue,
-   0 AS cost,
-   0 AS sent_msg,
-   0 AS open_msg,
-   0 AS click_msg,
-   account_cnt
- FROM
-   registrations )
-   SELECT
- 
-   date,
- SUM(revenue) AS revenue,
- SUM(cost) AS cost,
- SUM(sent_msg) AS sent_msg,
+-- CTE (Common Table Expression) for revenue calculation in USD
+WITH revenue_usd AS (
+  SELECT
+    s.date,                           -- Select the date of the session
+    SUM(p.price) AS revenue           -- Calculate the total revenue from product prices
+  FROM
+    `DA.order` o                       -- Join orders table (DA.order)
+  JOIN
+    `DA.product` p                     -- Join products table (DA.product) to get product prices
+  ON
+    o.item_id = p.item_id              -- Match orders to products by item_id
+  JOIN
+    `DA.session` s                     -- Join session table (DA.session) to get session dates
+  ON
+    o.ga_session_id = s.ga_session_id  -- Match orders to sessions by session ID
+  GROUP BY
+    s.date                             -- Group by date to get daily revenue
+),
 
- SUM (click_msg) AS click_msg,
-  SUM(open_msg) AS open_msg,
- SUM(account_cnt) AS registrations
+-- CTE to calculate email metrics (sent, open, and click rates)
+email_metrics AS (
+  SELECT
+    DATE_ADD(s.date, INTERVAL ems.sent_date DAY) AS sent_date, -- Calculate the actual sent date
+    COUNT(DISTINCT ems.id_message) AS sent_msg,              -- Count unique sent emails
+    COUNT(DISTINCT eo.id_message) AS open_msg,               -- Count unique opened emails
+    COUNT(DISTINCT ev.id_message) AS click_msg              -- Count unique clicked emails
+  FROM
+    `DA.email_sent` ems               -- Join sent emails table (DA.email_sent)
+  JOIN
+    `DA.account_session` acs         -- Join account sessions table (DA.account_session) to match account info
+  ON
+    ems.id_account = acs.account_id  -- Match emails to account sessions by account_id
+  JOIN
+    `DA.session` s                    -- Join session table (DA.session) to get session dates
+  ON
+    acs.ga_session_id = s.ga_session_id -- Match account sessions to session dates
+  LEFT JOIN
+    `DA.email_open` eo                -- Left join email opens table (DA.email_open) to track open rates
+  ON
+    ems.id_message = eo.id_message    -- Match sent emails to opened emails by message ID
+  LEFT JOIN
+    `DA.email_visit` ev               -- Left join email visits table (DA.email_visit) to track click rates
+  ON
+    ems.id_message = ev.id_message    -- Match sent emails to clicked emails by message ID
+  GROUP BY
+    DATE_ADD(s.date, INTERVAL ems.sent_date DAY) -- Group by the calculated sent date
+),
+
+-- CTE for account registrations count
+registrations AS (
+  SELECT
+    s.date,                           -- Select session date
+    COUNT(ac.account_id) AS account_cnt  -- Count the number of unique accounts registered per date
+  FROM
+    `DA.account_session` ac            -- Join account sessions table (DA.account_session)
+  JOIN
+    `DA.session` s                     -- Join session table (DA.session)
+  ON
+    ac.ga_session_id = s.ga_session_id  -- Match account sessions to session dates
+  GROUP BY
+    s.date                             -- Group by session date
+),
+
+-- Final CTE combining all the metrics (revenue, cost, email metrics, and registrations)
+final AS (
+  SELECT
+    date,
+    revenue,                          -- Include revenue from revenue_usd CTE
+    0 AS cost,                        -- Set cost to 0 for this part of the query (from revenue_usd)
+    0 AS sent_msg,                    -- Set sent emails to 0 for this part (from revenue_usd)
+    0 AS open_msg,                    -- Set opened emails to 0 for this part (from revenue_usd)
+    0 AS click_msg,                   -- Set clicked emails to 0 for this part (from revenue_usd)
+    0 AS account_cnt                  -- Set account count to 0 for this part (from revenue_usd)
+  FROM
+    revenue_usd
+  UNION ALL
+  SELECT
+    date,
+    0 AS revenue,                     -- Set revenue to 0 for this part (from paid_search_cost)
+    cost,                             -- Include cost from paid_search_cost
+    0 AS sent_msg,                    -- Set sent emails to 0 (from paid_search_cost)
+    0 AS open_msg,                    -- Set opened emails to 0 (from paid_search_cost)
+    0 AS click_msg,                   -- Set clicked emails to 0 (from paid_search_cost)
+    0 AS account_cnt                  -- Set account count to 0 (from paid_search_cost)
+  FROM
+    `DA.paid_search_cost`
+  UNION ALL
+  SELECT
+    sent_date,                        -- Include the sent date from email_metrics CTE
+    0 AS revenue,                     -- Set revenue to 0 for this part (from email_metrics)
+    0 AS cost,                        -- Set cost to 0 (from email_metrics)
+    sent_msg,                         -- Include sent emails count from email_metrics
+    open_msg,                         -- Include opened emails count from email_metrics
+    click_msg,                        -- Include clicked emails count from email_metrics
+    0 AS account_cnt                  -- Set account count to 0 (from email_metrics)
+  FROM
+    email_metrics
+  UNION ALL
+  SELECT
+    date,
+    0 AS revenue,                     -- Set revenue to 0 for this part (from registrations)
+    0 AS cost,                        -- Set cost to 0 (from registrations)
+    0 AS sent_msg,                    -- Set sent emails to 0 (from registrations)
+    0 AS open_msg,                    -- Set opened emails to 0 (from registrations)
+    0 AS click_msg,                   -- Set clicked emails to 0 (from registrations)
+    account_cnt                       -- Include account count from registrations
+  FROM
+    registrations
+)
+
+-- Final SELECT statement to aggregate all metrics by date
+SELECT
+  date,                              -- Select date from the final aggregation
+  SUM(revenue) AS revenue,           -- Sum of all revenue
+  SUM(cost) AS cost,                 -- Sum of all costs
+  SUM(sent_msg) AS sent_msg,         -- Sum of all sent emails
+  SUM(click_msg) AS click_msg,       -- Sum of all clicked emails
+  SUM(open_msg) AS open_msg,         -- Sum of all opened emails
+  SUM(account_cnt) AS registrations -- Sum of all account registrations
 FROM
- final
+  final
 GROUP BY
- date
+  date                               -- Group by date for daily aggregation
+
