@@ -110,4 +110,4 @@ This script can be used to:
 - `data-analytics-mate.DA.email_sent`
 - `data-analytics-mate.DA.account_session`
 - `data-analytics-mate.DA.session`
-``
+  
