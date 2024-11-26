@@ -77,3 +77,37 @@ The query results can be visualized in Looker Studio to display key metrics such
 - **Daily trend of sent messages** (`sent_msg`)
 
 For a closer look, check the visualization in [Looker Studio](https://lookerstudio.google.com/reporting/bd6f8eb0-9e85-4da6-8353-c41b5e73016b). 
+## SQL Script for monthly_email_engagement 
+
+This SQL script calculates and organizes key email engagement metrics for each account on a monthly basis. Specifically, it identifies the percentage of emails sent to each account relative to the total emails sent in that month and captures the first and last dates emails were sent to each account in the month.
+
+### Script Overview:
+
+#### **Email Percentage Calculation:**
+- For each month and account, the script calculates the percentage of emails sent to a specific account from the total number of emails sent across all accounts in that month.
+- The calculation divides the count of emails sent to each account by the total number of emails sent for the month, generating a `sent_msg_percent_from_this_month` metric.
+
+#### **First and Last Email Sent Dates:**
+- The script identifies the first and last dates that emails were sent to each account within each month.
+- These metrics are captured as `first_sent_date` and `last_sent_date`.
+
+### Potential Use Cases:
+This script can be used to:
+
+- **Track Monthly Engagement:** Identify accounts with high or low email engagement relative to other accounts within the same month.
+- **Identify Inactive Accounts:** Determine accounts that have not received emails recently based on the `last_sent_date` metric.
+- **Analyze Email Campaign Performance:** Understand the distribution of emails sent across accounts, especially useful for large-scale email marketing strategies.
+- **Support Account Retention Strategies:** Use engagement metrics to support re-engagement strategies for accounts with low email receipt percentages.
+
+### Output Columns:
+- **`sent_month`**: The month in which emails were sent.
+- **`id_account`**: Unique identifier for each account.
+- **`sent_msg_percent_from_this_month`**: Percentage of emails sent to the account out of the total emails sent in that month.
+- **`first_sent_date`**: Date of the first email sent to the account within the month.
+- **`last_sent_date`**: Date of the last email sent to the account within the month.
+
+### Tables Used:
+- `data-analytics-mate.DA.email_sent`
+- `data-analytics-mate.DA.account_session`
+- `data-analytics-mate.DA.session`
+``
